@@ -1,38 +1,50 @@
-```python
-"""
-Helper functions for API requests and error handling.
-"""
-
-import requests
+import logging
 from typing import Dict
 
-def make_api_request(url: str, method: str = 'GET', data: Dict = None) -> Dict:
+def parse_api_response(response: Dict) -> Dict:
     """
-    Makes an API request to the specified URL.
-
+    Parse API response and extract relevant information.
+    
     Args:
-    - url (str): The URL of the API endpoint.
-    - method (str): The HTTP method to use (default: 'GET').
-    - data (Dict): The data to send with the request (default: None).
-
+    response (Dict): API response dictionary
+    
     Returns:
-    - Dict: The JSON response from the API.
-
-    Raises:
-    - requests.RequestException: If the request fails.
+    Dict: Parsed API response dictionary
     """
     try:
-        if method == 'GET':
-            response = requests.get(url)
-        elif method == 'POST':
-            response = requests.post(url, json=data)
-        else:
-            raise ValueError(f"Unsupported method: {method}")
+        # Attempt to parse the API response
+        data = response.get('data', {})
+        error = response.get('error', None)
+        
+        # Check for errors in the API response
+        if error:
+            # Log the error and re-raise it
+            logging.error(f"API error: {error}")
+            raise Exception(f"API error: {error}")
+        
+        # Return the parsed API response
+        return data
+    
+    except Exception as e:
+        # Log the error and re-raise it
+        logging.error(f"Error parsing API response: {str(e)}")
+        raise Exception(f"Error parsing API response: {str(e)}")
 
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        # Log the error and re-raise the exception
-        print(f"API request failed: {e}")
-        raise
-```
+def handle_api_timeout(exception: Exception) -> None:
+    """
+    Handle API timeout exceptions and log the error.
+    
+    Args:
+    exception (Exception): API timeout exception
+    """
+    logging.error(f"API timeout error: {str(exception)}")
+
+# Example usage:
+try:
+    # Simulate an API call
+    api_response = {'data': {'id': 1, 'name': 'John'}, 'error': None}
+    parsed_response = parse_api_response(api_response)
+    print(parsed_response)
+except Exception as e:
+    # Handle any exceptions that occur during the API call
+    handle_api_timeout(e)
