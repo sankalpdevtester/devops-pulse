@@ -1,35 +1,24 @@
 ```python
 import re
-from typing import Optional
+from urllib.parse import urlparse
 
-def validate_api_endpoint_url(url: str) -> Optional[str]:
+def validate_api_endpoint_url(url: str) -> bool:
     """
     Validate API endpoint URL.
-
+    
     Args:
     url (str): The URL to be validated.
-
+    
     Returns:
-    Optional[str]: Error message if the URL is invalid, otherwise None.
+    bool: True if the URL is valid, False otherwise.
     """
-    # Check if the URL starts with http or https
-    if not re.match(r"^https?", url):
-        return "URL must start with http or https"
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc]) and re.match(r'^https?$', result.scheme)
+    except ValueError:
+        return False
 
-    # Check if the URL contains any invalid characters
-    if not re.match(r"^https?://[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,}(/[^\/\s]+)*$", url):
-        return "URL contains invalid characters"
-
-    return None
-
-# Example usage:
-def validate_url_example():
-    url = "https://example.com/api/endpoint"
-    error = validate_api_endpoint_url(url)
-    if error:
-        print(f"Invalid URL: {error}")
-    else:
-        print("URL is valid")
-
-# Other existing utility functions...
+def validate_string(input_string: str, min_length: int = 1, max_length: int = 100) -> bool:
+    # existing function
+    pass
 ```
