@@ -1,24 +1,26 @@
 ```python
-import re
-from urllib.parse import urlparse
+import time
+from typing import Optional
 
-def validate_api_endpoint_url(url: str) -> bool:
+def parse_api_response_time(response_time: Optional[float]) -> str:
     """
-    Validate API endpoint URL.
-    
+    Converts API response time from milliseconds to a human-readable format.
+
     Args:
-    url (str): The URL to be validated.
-    
-    Returns:
-    bool: True if the URL is valid, False otherwise.
-    """
-    try:
-        result = urlparse(url)
-        return all([result.scheme, result.netloc]) and re.match(r'^https?$', result.scheme)
-    except ValueError:
-        return False
+    response_time (Optional[float]): The response time in milliseconds.
 
-def validate_string(input_string: str, min_length: int = 1, max_length: int = 100) -> bool:
-    # existing function
-    pass
+    Returns:
+    str: The response time in a human-readable format (e.g., 1.23ms, 123.45ms, 1.23s).
+    """
+    if response_time is None:
+        return "N/A"
+
+    if response_time < 1000:
+        return f"{response_time:.2f}ms"
+    else:
+        return f"{response_time / 1000:.2f}s"
+
+# Example usage:
+response_time_ms = 1234.56
+print(parse_api_response_time(response_time_ms))  # Output: 1.23s
 ```
