@@ -1,26 +1,29 @@
 ```python
 import time
-from typing import Optional
+from typing import Dict
 
-def parse_api_response_time(response_time: Optional[float]) -> str:
+def parse_api_response_time(response_time: float) -> Dict[str, float]:
     """
-    Converts API response time from milliseconds to a human-readable format.
+    Parse API response time into milliseconds, seconds, and minutes.
 
     Args:
-    response_time (Optional[float]): The response time in milliseconds.
+    response_time (float): Response time in seconds.
 
     Returns:
-    str: The response time in a human-readable format (e.g., 1.23ms, 123.45ms, 1.23s).
+    Dict[str, float]: Dictionary containing response time in milliseconds, seconds, and minutes.
     """
-    if response_time is None:
-        return "N/A"
+    response_time_ms = response_time * 1000
+    response_time_min = response_time / 60
 
-    if response_time < 1000:
-        return f"{response_time:.2f}ms"
-    else:
-        return f"{response_time / 1000:.2f}s"
+    return {
+        "ms": response_time_ms,
+        "s": response_time,
+        "min": response_time_min
+    }
 
-# Example usage:
-response_time_ms = 1234.56
-print(parse_api_response_time(response_time_ms))  # Output: 1.23s
+def get_current_timestamp() -> int:
+    # existing function
+    return int(time.time())
+
+# existing functions...
 ```
