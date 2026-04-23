@@ -1,29 +1,23 @@
 ```python
-import time
-from typing import Dict
+import urllib.parse
 
-def parse_api_response_time(response_time: float) -> Dict[str, float]:
+def parse_api_endpoint_url(url: str) -> dict:
     """
-    Parse API response time into milliseconds, seconds, and minutes.
+    Parse an API endpoint URL into its components.
 
     Args:
-    response_time (float): Response time in seconds.
+    url (str): The API endpoint URL to parse.
 
     Returns:
-    Dict[str, float]: Dictionary containing response time in milliseconds, seconds, and minutes.
+    dict: A dictionary containing the parsed URL components.
     """
-    response_time_ms = response_time * 1000
-    response_time_min = response_time / 60
+    parsed_url = urllib.parse.urlparse(url)
+    query_params = urllib.parse.parse_qs(parsed_url.query)
 
     return {
-        "ms": response_time_ms,
-        "s": response_time,
-        "min": response_time_min
+        "scheme": parsed_url.scheme,
+        "netloc": parsed_url.netloc,
+        "path": parsed_url.path,
+        "query_params": query_params
     }
-
-def get_current_timestamp() -> int:
-    # existing function
-    return int(time.time())
-
-# existing functions...
 ```
