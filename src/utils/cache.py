@@ -17,14 +17,14 @@ class Cache:
         Get a value from the cache.
 
         Args:
-        key (str): The key of the value to retrieve.
+        key (str): The key to retrieve from the cache.
 
         Returns:
         Any: The cached value or None if it doesn't exist or has expired.
         """
         if key in self.cache:
-            value, expires_at = self.cache[key]
-            if time.time() < expires_at:
+            value, expiry = self.cache[key]
+            if time.time() < expiry:
                 return value
             else:
                 del self.cache[key]
@@ -35,36 +35,37 @@ class Cache:
         Set a value in the cache.
 
         Args:
-        key (str): The key of the value to store.
-        value (Any): The value to store.
+        key (str): The key to store in the cache.
+        value (Any): The value to store in the cache.
         """
-        expires_at = time.time() + self.ttl
-        self.cache[key] = (value, expires_at)
+        expiry = time.time() + self.ttl
+        self.cache[key] = (value, expiry)
 
     def delete(self, key: str) -> None:
         """
-        Delete a value from the cache.
+        Delete a key from the cache.
 
         Args:
-        key (str): The key of the value to delete.
+        key (str): The key to delete from the cache.
         """
         if key in self.cache:
             del self.cache[key]
 
 def get_cache() -> Cache:
     """
-    Get the global cache instance.
+    Get the cache instance.
 
     Returns:
-    Cache: The global cache instance.
+    Cache: The cache instance.
     """
-    cache = Cache()
-    return cache
+    return Cache()
 
 # Example usage:
 cache = get_cache()
 cache.set("api_response", {"status": 200, "data": {"message": "OK"}})
 print(cache.get("api_response"))  # Output: {'status': 200, 'data': {'message': 'OK'}}
+time.sleep(61)  # Wait for the cache to expire
+print(cache.get("api_response"))  # Output: None
 ```
 To integrate this cache utility with the existing files, you can use it in the `src/background_tasks.py` file to cache API responses. For example:
 ```python
@@ -72,54 +73,28 @@ from src.utils.cache import get_cache
 
 cache = get_cache()
 
-def fetch_api_data():
-    # Fetch API data
-    api_response = fetch_api()
-    cache.set("api_response", api_response)
-    return api_response
-
-def get_api_data():
-    cached_response = cache.get("api_response")
+def fetch_api_response(api_url: str) -> Any:
+    cached_response = cache.get(api_url)
     if cached_response:
         return cached_response
     else:
-        return fetch_api_data()
+        response = requests.get(api_url)
+        cache.set(api_url, response.json())
+        return response.json()
 ```
-You can also use the cache utility in the `src/pages/addEndpoint.tsx` file to cache API endpoint data. For example:
-```typescript
-import { getCache } from '../utils/cache';
-
-const cache = getCache();
-
-const AddEndpointPage = () => {
-  const [endpointData, setEndpointData] = useState({});
-
-  const fetchEndpointData = async () => {
-    const cachedResponse = cache.get('endpoint_data');
-    if (cachedResponse) {
-      setEndpointData(cachedResponse);
-    } else {
-      const response = await fetch('/api/endpoint');
-      const data = await response.json();
-      cache.set('endpoint_data', data);
-      setEndpointData(data);
-    }
-  };
-
-  return (
-    <div>
-      <h1>Add Endpoint</h1>
-      <button onClick={fetchEndpointData}>Fetch Endpoint Data</button>
-      <pre>{JSON.stringify(endpointData, null, 2)}</pre>
-    </div>
-  );
-};
-```
-Note that you need to modify the `src/utils/helpers.py` file to include the cache utility. You can add the following code to the file:
+You can also use the cache in the `src/models/endpoints.py` file to cache the results of expensive database queries. For example:
 ```python
 from src.utils.cache import get_cache
 
-def get_cache():
-    return get_cache()
+cache = get_cache()
+
+def get_endpoint_data(endpoint_id: int) -> Any:
+    cached_data = cache.get(f"endpoint_data_{endpoint_id}")
+    if cached_data:
+        return cached_data
+    else:
+        data = EndpointModel.query.get(endpoint_id)
+        cache.set(f"endpoint_data_{endpoint_id}", data)
+        return data
 ```
-This will allow you to use the cache utility in the `src/background_tasks.py` file.
+This cache utility can be used throughout the project to improve performance by reducing the number of database queries and API requests.
