@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 class Cache:
     def __init__(self, ttl: int = 60):
@@ -9,10 +9,10 @@ class Cache:
         Args:
         ttl (int): The time to live for each cache entry in seconds. Defaults to 60.
         """
-        self.cache: Dict[str, Any] = {}
+        self.cache: Dict[str, Dict[str, Any]] = {}
         self.ttl = ttl
 
-    def get(self, key: str) -> Any:
+    def get(self, key: str) -> Optional[Any]:
         """
         Get a value from the cache.
 
@@ -20,14 +20,12 @@ class Cache:
         key (str): The key to retrieve from the cache.
 
         Returns:
-        Any: The cached value or None if it doesn't exist or has expired.
+        Optional[Any]: The cached value if it exists and is not expired, otherwise None.
         """
         if key in self.cache:
-            value, expiry = self.cache[key]
-            if time.time() < expiry:
-                return value
-            else:
-                del self.cache[key]
+            value = self.cache[key]
+            if time.time() - value["timestamp"] < self.ttl:
+                return value["data"]
         return None
 
     def set(self, key: str, value: Any) -> None:
@@ -38,8 +36,7 @@ class Cache:
         key (str): The key to store in the cache.
         value (Any): The value to store in the cache.
         """
-        expiry = time.time() + self.ttl
-        self.cache[key] = (value, expiry)
+        self.cache[key] = {"data": value, "timestamp": time.time()}
 
     def delete(self, key: str) -> None:
         """
@@ -51,50 +48,51 @@ class Cache:
         if key in self.cache:
             del self.cache[key]
 
+    def clear(self) -> None:
+        """
+        Clear all entries from the cache.
+        """
+        self.cache.clear()
+
 def get_cache() -> Cache:
     """
-    Get the cache instance.
+    Get the global cache instance.
 
     Returns:
-    Cache: The cache instance.
+    Cache: The global cache instance.
     """
     return Cache()
 
+def cache_response(ttl: int = 60):
+    """
+    Decorator to cache API responses.
+
+    Args:
+    ttl (int): The time to live for the cached response in seconds. Defaults to 60.
+
+    Returns:
+    Callable: The decorated function.
+    """
+    cache = get_cache()
+
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            key = f"{func.__name__}:{str(args)}:{str(kwargs)}"
+            cached_response = cache.get(key)
+            if cached_response is not None:
+                return cached_response
+            response = func(*args, **kwargs)
+            cache.set(key, response)
+            return response
+        return wrapper
+    return decorator
+
 # Example usage:
-cache = get_cache()
-cache.set("api_response", {"status": 200, "data": {"message": "OK"}})
-print(cache.get("api_response"))  # Output: {'status': 200, 'data': {'message': 'OK'}}
-time.sleep(61)  # Wait for the cache to expire
-print(cache.get("api_response"))  # Output: None
-```
-To integrate this cache utility with the existing files, you can use it in the `src/background_tasks.py` file to cache API responses. For example:
-```python
-from src.utils.cache import get_cache
+@cache_response(ttl=30)
+def get_api_response():
+    # Simulate an API call
+    time.sleep(1)
+    return {"data": "API response"}
 
-cache = get_cache()
-
-def fetch_api_response(api_url: str) -> Any:
-    cached_response = cache.get(api_url)
-    if cached_response:
-        return cached_response
-    else:
-        response = requests.get(api_url)
-        cache.set(api_url, response.json())
-        return response.json()
-```
-You can also use the cache in the `src/models/endpoints.py` file to cache the results of expensive database queries. For example:
-```python
-from src.utils.cache import get_cache
-
-cache = get_cache()
-
-def get_endpoint_data(endpoint_id: int) -> Any:
-    cached_data = cache.get(f"endpoint_data_{endpoint_id}")
-    if cached_data:
-        return cached_data
-    else:
-        data = EndpointModel.query.get(endpoint_id)
-        cache.set(f"endpoint_data_{endpoint_id}", data)
-        return data
-```
-This cache utility can be used throughout the project to improve performance by reducing the number of database queries and API requests.
+print(get_api_response())  # Cache miss
+print(get_api_response())  # Cache hit
