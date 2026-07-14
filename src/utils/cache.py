@@ -7,7 +7,7 @@ class Cache:
         Initialize the cache with a time-to-live (TTL) value.
 
         Args:
-        - ttl (int): The time-to-live value in seconds. Defaults to 60 seconds.
+        - ttl (int): The time-to-live value in seconds. Defaults to 60.
         """
         self.cache: Dict[str, Any] = {}
         self.ttl = ttl
@@ -17,7 +17,7 @@ class Cache:
         Get a value from the cache.
 
         Args:
-        - key (str): The key to retrieve from the cache.
+        - key (str): The key to retrieve the value for.
 
         Returns:
         - The cached value if it exists and is not expired, otherwise None.
@@ -35,8 +35,8 @@ class Cache:
         Set a value in the cache.
 
         Args:
-        - key (str): The key to store in the cache.
-        - value (Any): The value to store in the cache.
+        - key (str): The key to store the value under.
+        - value (Any): The value to store.
         """
         expiry = time.time() + self.ttl
         self.cache[key] = (value, expiry)
@@ -46,7 +46,7 @@ class Cache:
         Delete a key from the cache.
 
         Args:
-        - key (str): The key to delete from the cache.
+        - key (str): The key to delete.
         """
         if key in self.cache:
             del self.cache[key]
@@ -65,7 +65,7 @@ def cache_response(ttl: int = 60):
     Decorator to cache API responses.
 
     Args:
-    - ttl (int): The time-to-live value in seconds. Defaults to 60 seconds.
+    - ttl (int): The time-to-live value in seconds. Defaults to 60.
     """
     cache = get_cache()
 
@@ -86,8 +86,7 @@ def cache_response(ttl: int = 60):
 def get_api_response():
     # Simulate an API call
     time.sleep(2)
-    return {"message": "API response"}
+    return {"status": "ok"}
 
-# Test the cache
 print(get_api_response())  # Cache miss
 print(get_api_response())  # Cache hit
